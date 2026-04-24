@@ -1,5 +1,7 @@
 // horizontal sliding window
 
+`timescale 1ns / 1ps
+
 module box_filter_h5 #(
     parameter DATA_W = 32,
     parameter IMG_W  = 128
@@ -16,8 +18,10 @@ module box_filter_h5 #(
 
 reg signed [DATA_W-1:0] w0, w1, w2, w3, w4;
 reg signed [DATA_W-1:0] running_sum;
-reg signed [DATA_W-1:0] next_sum;
-reg [$clog2(IMG_W)-1:0] x;
+reg [31:0] x;
+wire signed [DATA_W-1:0] next_sum;
+
+assign next_sum = running_sum + pixel_in - w4;
 
 always @(posedge clk) begin
     if (rst) begin
@@ -34,7 +38,6 @@ always @(posedge clk) begin
     else if (valid_in) begin
 
         /* compute next running sum */
-        next_sum = running_sum + pixel_in - w4;
         sum_out <= next_sum;
         valid_out <= 1;
 

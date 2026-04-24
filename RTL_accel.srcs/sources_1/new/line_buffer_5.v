@@ -29,7 +29,7 @@ reg signed [DATA_W-1:0] line1 [0:IMG_W-1];
 reg signed [DATA_W-1:0] line2 [0:IMG_W-1];
 reg signed [DATA_W-1:0] line3 [0:IMG_W-1];
 
-reg [$clog2(IMG_W)-1:0] x;
+reg [31:0] x;
 
 /* pipeline registers */
 integer i;

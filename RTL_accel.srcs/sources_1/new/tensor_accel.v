@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module tensor_accel #(
     parameter DATA_W = 16,
     parameter ACC_W  = 32,
@@ -218,6 +220,7 @@ wire valid_stage4_sxy;
 wire valid_stage4_syy;
 wire valid_stage4_sxt;
 wire valid_stage4_syt;
+wire valid_stage4_unused;
 
 box_filter_v5 #(.DATA_W(ACC_W)) v_sxx (
     .clk(clk),
@@ -274,6 +277,7 @@ assign syy = vsum_syy;
 assign sxt = vsum_sxt;
 assign syt = vsum_syt;
 
+assign valid_stage4_unused = valid_stage4_sxy | valid_stage4_syy | valid_stage4_sxt | valid_stage4_syt;
 assign valid_out = valid_stage4_sxx;
 
 endmodule

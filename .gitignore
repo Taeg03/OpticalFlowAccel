@@ -3,3 +3,4 @@
 *.ip_user_files
 *.runs
 *.sim
+RTL_accel.xpr
