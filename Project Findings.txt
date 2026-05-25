@@ -1,0 +1,102 @@
+﻿* structure_tensor_accumulate, high runtime, low throughput
+   * ~50% runtime
+* built 5x5 (not 3x3) sliding window w/ horizontal sum and 4 row buffers (this dominates ASIC area)
+   * verified with deterministic RNG with verilator
+   * also verified with Verilog to an extent
+* Verilator to compare throughput (from last week) CPU benchmark:
+Resolution
+	Avg Runtime
+	Throughput
+	256×256
+	3.918 ms
+	16.7 MP/s
+	512×512
+	17.476 ms
+	15.0 MP/s
+	1024×1024
+	62.442 ms
+	16.8 MP/s
+	* estimate FPGA throughput
+   * 100 MHz target clock timing constraint 
+      * Worst Negative Slack (WNS): +1.840 ns
+      * Estimated critical path delay: ~8.16 ns
+      * Estimated Fmax: ~122 MHz
+   * assuming 1 output per cycle after pipeline fill… 122MP/s
+      * modestly 50MP/s → 2.5x speed up → 1/.5+.5/2.5→1.43x speedup
+      * otherwise 7.6x → ~1.7x total speed up
+
+
+Synthesis
+LUTs
+	~515
+	Registers
+	~459
+	DSP48E1
+	1
+	BRAM
+	1
+	SRL16E
+	32
+	CARRY4
+	47
+	
+
+register count being close to LUT count → lot of just moving data (and the LUT count is relatively small for the board). BRAM probably for the line buffers. shift register LUT for streaming pipeline (good). carry4, most math is just adding. 
+
+
+Power
+Idle:
+Metric
+	Value
+	Total
+	72 mW
+	Dynamic
+	3 mW
+	Static
+	68 mW
+	
+
+Active:
+Metric
+	Value
+	Total
+	114 mW
+	Dynamic
+	42 mW
+	Static
+	72 mW
+	
+
+in power report:
+* DSPs go from 0.000 W to 0.001 W, so arithmetic is a tiny fraction overall
+* Signals rise from <0.001 W to 0.007 W
+* Slice logic rises from <0.001 W to 0.005 W
+* I/O rises from <0.001 W to 0.024 W (largest single increase)
+   * should look into toggling rate…
+* u_accel rises from 0.003 W to 0.017 W, and lb_sxx (line buffer) appears in both, with much higher total in active
+
+
+worth noting only 23% netlist match with medium confidence! (room for improvement here)
+dynamic increase: ~39 mW
+* suggests dynamic power increase came mostly from:
+   * line-buffer activity
+   * register switching
+   * streaming state updates
+
+
+ASIC stuff (yosys)
+Module
+	Area
+	box_filter_h5
+	~675
+	box_filter_v5
+	~722
+	line_buffer_5
+	~25,374
+	tensor_accel total
+	~142,841
+	…mapped against Nangate45
+dominant hardware cost comes from line buffers!
+
+
+Overall, the cost of data movement and buffering dominated but this demonstrates the ability for high sustained throughput through a fully streaming one-pixel-per-cycle architecture. This could even be further improved to go beyond 1 px/cycle, reuse arithmetic.
